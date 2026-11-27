@@ -91,6 +91,9 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         drag = DragController(root, dragHost)
         root.touchInterceptor = { drag.onTouch(it) }
         setContentView(root)
+        // Keep focus off the (hidden) search field until the drawer is opened.
+        root.isFocusableInTouchMode = true
+        root.requestFocus()
 
         wireHome()
         wireDrawer()
@@ -213,8 +216,13 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         drawer.setInsets(bars.top, maxOf(navBottom, insets.imeBottomCompat()))
     }
 
+    private var lastLightBars: Boolean? = null
+
     private fun updateSystemBars() {
         val lightBars = if (drawerProgress > 0.5f) !palette.isDark else wallpaperDarkText
+        // Called every animation frame: only talk to the window when the value flips.
+        if (lightBars == lastLightBars) return
+        lastLightBars = lightBars
         if (Build.VERSION.SDK_INT >= 30) {
             val mask = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
             window.insetsController?.setSystemBarsAppearance(if (lightBars) mask else 0, mask)
@@ -261,8 +269,13 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
     }
 
     private fun onWallpaperColors(colors: WallpaperColors?) {
-        val dark = Build.VERSION.SDK_INT >= 27 && colors != null &&
-            colors.colorHints and WallpaperColors.HINT_SUPPORTS_DARK_TEXT != 0
+        val dark = when {
+            colors == null || Build.VERSION.SDK_INT < 27 -> false
+            // The system's own hint (public since Android 12).
+            Build.VERSION.SDK_INT >= 31 -> colors.colorHints and WallpaperColors.HINT_SUPPORTS_DARK_TEXT != 0
+            // Older: a clearly light dominant colour means dark text reads better.
+            else -> colors.primaryColor.luminance() > 0.62f
+        }
         if (dark == wallpaperDarkText) return
         wallpaperDarkText = dark
         applyHomeColors()
@@ -277,6 +290,7 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
 
     private fun applySettings() {
         palette = Palette.from(this, settings)
+        lastLightBars = null
         drawer.applyPalette(palette)
         drawer.setColumns(settings.drawerColumns)
         drawer.setIconSize(baseIconSize())
@@ -317,18 +331,34 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
     private fun homeLabelColor() = if (wallpaperDarkText) 0xFF15161A.toInt() else IconView.LABEL_ON_WALLPAPER
     private fun folderTileColor() = if (wallpaperDarkText) 0x40FFFFFF else 0x33FFFFFF
 
-    private fun bindHome(layout: HomeLayout) {
-        if (!::home.isInitialized) return
+    private fun ensurePages(layout: HomeLayout) {
         val ws = home.workspace
-        val cols = settings.homeColumns
-        val rows = settings.homeRows
         val pageCount = maxOf(1, layout.pageCount)
         while (ws.childCount < pageCount) {
             ws.addView(CellLayout(this).apply {
+                columns = settings.homeColumns
+                rows = settings.homeRows
+                setPadding(dp(8), dp(8), dp(8), 0)
                 isLongClickable = true
                 setOnLongClickListener { v -> showHomeMenu(v); true }
             })
         }
+        home.indicator.count = ws.childCount
+    }
+
+    private fun bindHome(layout: HomeLayout) {
+        if (!::home.isInitialized) return
+        // While an icon is in the air the grid must stay as the user sees it; only new pages
+        // are added. The full rebind happens when the drag ends.
+        if (::drag.isInitialized && (drag.isActive || drag.isArmed)) {
+            ensurePages(layout)
+            return
+        }
+        val ws = home.workspace
+        val cols = settings.homeColumns
+        val rows = settings.homeRows
+        val pageCount = maxOf(1, layout.pageCount)
+        ensurePages(layout)
         while (ws.childCount > pageCount) ws.removeViewAt(ws.childCount - 1)
         val iconSize = fittedHomeIconSize()
         ws.pages.forEachIndexed { index, page ->
@@ -608,7 +638,7 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         val menu = PopupMenuView(this, palette)
         menu.onDismissed = { if (popup === menu) popup = null }
         popup = menu
-        menu.show(root, anchor, shortcuts, items)
+        menu.show(root, anchor, shortcuts, items, minTop = navInsets.top)
     }
 
     private fun addToHome(key: ComponentKey) {

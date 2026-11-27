@@ -54,7 +54,7 @@ class PopupMenuView(context: Context, private val palette: Palette) : FrameLayou
     }
 
     /** Shows the menu near [anchor] (in [root] coordinates). */
-    fun show(root: ViewGroup, anchor: Rect, shortcuts: List<Entry>, actions: List<Entry>) {
+    fun show(root: ViewGroup, anchor: Rect, shortcuts: List<Entry>, actions: List<Entry>, minTop: Int = 0) {
         val width = dp(248)
         shortcuts.forEach { card.addView(shortcutRow(it), LinearLayout.LayoutParams(width, dp(48))) }
         if (shortcuts.isNotEmpty() && actions.isNotEmpty()) {
@@ -80,7 +80,7 @@ class PopupMenuView(context: Context, private val palette: Palette) : FrameLayou
         val gap = dp(8)
         val x = (anchor.centerX() - cw / 2).coerceIn(margin, (root.width - cw - margin).coerceAtLeast(margin))
         val above = anchor.top - gap - ch
-        val y = if (above >= root.paddingTop + margin + dp(24)) above else (anchor.bottom + gap).coerceAtMost(root.height - ch - margin)
+        val y = if (above >= minTop + margin) above else (anchor.bottom + gap).coerceAtMost(root.height - ch - margin)
         (card.layoutParams as LayoutParams).apply {
             gravity = Gravity.TOP or Gravity.START
             leftMargin = x

@@ -116,4 +116,28 @@ class LauncherSmokeTest {
         }
         assertTrue(ok)
     }
+
+    @Test
+    fun longPressOnEmptyHomeShowsMenuAndBackDismissesIt() {
+        val activity = Robolectric.buildActivity(LauncherActivity::class.java).setup().get()
+        settle()
+        val root = activity.window.decorView.findViewById<android.view.ViewGroup>(android.R.id.content).getChildAt(0)
+            as io.github.potato573.aura.ui.LauncherRoot
+        val page = findFirst(root) { it is io.github.potato573.aura.ui.CellLayout }!!
+        val before = root.childCount
+        page.performLongClick()
+        settle()
+        assertEquals(before + 1, root.childCount)
+        assertTrue(root.getChildAt(root.childCount - 1) is io.github.potato573.aura.ui.PopupMenuView)
+        @Suppress("DEPRECATION")
+        activity.onBackPressed()
+        settle()
+        assertEquals(before, root.childCount)
+    }
+
+    private fun findFirst(v: View, pred: (View) -> Boolean): View? {
+        if (pred(v)) return v
+        if (v is android.view.ViewGroup) for (i in 0 until v.childCount) findFirst(v.getChildAt(i), pred)?.let { return it }
+        return null
+    }
 }

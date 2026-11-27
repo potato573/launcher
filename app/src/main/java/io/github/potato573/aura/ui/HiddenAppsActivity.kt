@@ -72,8 +72,8 @@ class HiddenAppsActivity : Activity() {
             }
         }
         list.adapter = adapter
-        ui.applyWindow(list)
         setContentView(list)
+        ui.applyWindow(list)
         app.apps.addListener(appsListener)
     }
 

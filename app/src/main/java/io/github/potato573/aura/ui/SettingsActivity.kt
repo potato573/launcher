@@ -39,8 +39,9 @@ class SettingsActivity : Activity() {
             clipToPadding = false
             addView(list)
         }
-        ui.applyWindow(scroll)
+        // The window's insets controller only exists once there is content.
         setContentView(scroll)
+        ui.applyWindow(scroll)
 
         list.addView(ui.title(getString(R.string.app_name), getString(R.string.settings_title)))
 
