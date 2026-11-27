@@ -118,4 +118,25 @@ class HomeLayoutTest {
         assertEquals(l, l.combine(1, 999, "x"))
         assertNull(l.item(42))
     }
+
+    @Test fun combineKeyAndInsertIntoDock() {
+        var l = HomeLayout().addApp(k(1), 4, 4)
+        val target = l.items.single().id
+        l = l.combineKey(k(2), target, "F")
+        assertEquals(listOf(k(1), k(2)), (l.items.single() as FolderItem).apps)
+        assertEquals(l, l.combineKey(k(2), target, "F")) // already placed
+        l = l.insertIntoDock(k(3), 0, 5).insertIntoDock(k(4), 0, 5)
+        assertEquals(listOf(k(4), k(3)), l.dock)
+    }
+
+    @Test fun removeFromFolderWithoutPlacing() {
+        var l = HomeLayout().addApp(k(1), 4, 4).addApp(k(2), 4, 4).addApp(k(3), 4, 4)
+        val (a, b, c) = l.items.map { it.id }
+        l = l.combine(b, a, "F")
+        l = l.combine(c, l.items.first { it is FolderItem }.id, "F")
+        val f = l.items.single().id
+        l = l.removeFromFolder(f, k(3), 4, 4, toGrid = false)
+        assertFalse(l.contains(k(3)))
+        assertEquals(2, (l.item(f) as FolderItem).apps.size)
+    }
 }

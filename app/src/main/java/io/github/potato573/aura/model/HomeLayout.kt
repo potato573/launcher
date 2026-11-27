@@ -133,21 +133,32 @@ data class HomeLayout(
     fun combine(dragId: Long, targetId: Long, defaultTitle: String): HomeLayout {
         if (dragId == targetId) return this
         val drag = item(dragId) as? AppItem ?: return this
+        if (item(targetId) == null) return this
+        return remove(dragId).combineKey(drag.key, targetId, defaultTitle)
+    }
+
+    /**
+     * Puts [key] (an app not placed anywhere yet) into the item [targetId]: onto an app it
+     * creates a folder in that cell, onto a folder it appends.
+     */
+    fun combineKey(key: ComponentKey, targetId: Long, defaultTitle: String): HomeLayout {
+        if (contains(key)) return this
         return when (val target = item(targetId)) {
             is AppItem -> {
-                val folder = FolderItem(nextId, target.cell, defaultTitle, listOf(target.key, drag.key))
-                copy(
-                    items = items.filterNot { it.id == dragId || it.id == targetId } + folder,
-                    nextId = nextId + 1,
-                )
+                val folder = FolderItem(nextId, target.cell, defaultTitle, listOf(target.key, key))
+                copy(items = items.filterNot { it.id == targetId } + folder, nextId = nextId + 1)
             }
             is FolderItem -> copy(
-                items = items.filterNot { it.id == dragId }.map {
-                    if (it.id == targetId) target.copy(apps = target.apps + drag.key) else it
-                },
+                items = items.map { if (it.id == targetId) target.copy(apps = target.apps + key) else it },
             )
             null -> this
         }
+    }
+
+    /** Inserts [key] (not placed anywhere yet) into the dock at [index]. */
+    fun insertIntoDock(key: ComponentKey, index: Int, maxDock: Int): HomeLayout {
+        if (contains(key) || dock.size >= maxDock) return this
+        return copy(dock = dock.toMutableList().apply { add(index.coerceIn(0, size), key) })
     }
 
     /** Moves a dock app onto the grid. */
