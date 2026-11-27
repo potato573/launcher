@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Stable ids so the system restores scroll position when settings are re-themed. -->
+    <item name="settings_scroll" type="id" />
+    <item name="hidden_list" type="id" />
+</resources>

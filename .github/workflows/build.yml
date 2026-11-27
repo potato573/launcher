@@ -19,12 +19,28 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build debug APK
+      - name: Unit and Robolectric tests
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew testDebugUnitTest --stacktrace
+
+      - name: Lint
+        run: ./gradlew lintDebug
+
+      - name: Build debug and release APKs
+        run: ./gradlew assembleDebug assembleRelease --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-and-lint-reports
+          path: |
+            app/build/reports/tests/
+            app/build/reports/lint-results-debug.html
 
       - uses: actions/upload-artifact@v4
         with:
-          name: PocketLauncher-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: AURA-apks
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
