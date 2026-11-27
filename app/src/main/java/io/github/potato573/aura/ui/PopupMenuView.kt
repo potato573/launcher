@@ -162,6 +162,15 @@ class PopupMenuView(context: Context, private val palette: Palette) : FrameLayou
 
     val isDismissing: Boolean get() = dismissing
 
+    /** Removes the menu without animation (a drag is starting from the same icon). */
+    fun dismissNow() {
+        if (dismissing && parent == null) return
+        dismissing = true
+        anim.cancel()
+        (parent as? ViewGroup)?.removeView(this)
+        onDismissed?.invoke()
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) dismiss()

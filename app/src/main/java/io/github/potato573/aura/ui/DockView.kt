@@ -43,8 +43,12 @@ class DockView(context: Context) : ViewGroup(context) {
     /** Index where a drop at local x would land, among the current children. */
     fun slotAt(x: Float): Int {
         if (childCount == 0) return 0
-        val slot = width.toFloat() / maxOf(childCount, 1)
-        return (x / slot).toInt().coerceIn(0, childCount)
+        // Children are centred; find the gap the finger is closest to.
+        for (i in 0 until childCount) {
+            val c = getChildAt(i)
+            if (x < c.left + c.width / 2f) return i
+        }
+        return childCount
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -73,7 +77,6 @@ class DockView(context: Context) : ViewGroup(context) {
     }
 
     override fun onDraw(canvas: Canvas) {
-        if (childCount == 0) return
         val inset = dp(1f)
         rect.set(inset, inset, width - inset, height - inset)
         val r = height / 2.6f

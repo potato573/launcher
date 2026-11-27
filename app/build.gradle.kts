@@ -50,3 +50,12 @@ dependencies {
     // Robolectric runs the real activities on the JVM in CI: lifecycle, views, gestures.
     testImplementation("org.robolectric:robolectric:4.14.1")
 }
+
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStackTraces = true
+        showCauses = true
+    }
+}

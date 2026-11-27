@@ -33,6 +33,36 @@ class LauncherRoot(context: Context) : FrameLayout(context) {
 
     var host: Host? = null
 
+    /** Sees every event before the view tree (used by drag and drop). True = consumed. */
+    var touchInterceptor: ((MotionEvent) -> Boolean)? = null
+    private var childrenCancelled = false
+
+    /** Last touch position in this view's coordinates. */
+    var lastTouchX = 0f
+        private set
+    var lastTouchY = 0f
+        private set
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        lastTouchX = ev.x
+        lastTouchY = ev.y
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) childrenCancelled = false
+        val interceptor = touchInterceptor
+        if (interceptor != null && interceptor(ev)) {
+            if (!childrenCancelled) {
+                // The view that received the press (an icon) must let go of the gesture.
+                childrenCancelled = true
+                val cancel = MotionEvent.obtain(ev)
+                cancel.action = MotionEvent.ACTION_CANCEL
+                super.dispatchTouchEvent(cancel)
+                cancel.recycle()
+            }
+            return true
+        }
+        if (childrenCancelled) return true
+        return super.dispatchTouchEvent(ev)
+    }
+
     private val slop = ViewConfiguration.get(context).scaledTouchSlop
     private val minFling = ViewConfiguration.get(context).scaledMinimumFlingVelocity.toFloat()
     private var downX = 0f

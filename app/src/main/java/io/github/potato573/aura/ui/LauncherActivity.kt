@@ -24,6 +24,7 @@ import io.github.potato573.aura.anim.SpringAnimator
 import io.github.potato573.aura.data.AppEntry
 import io.github.potato573.aura.model.AppItem
 import io.github.potato573.aura.model.ComponentKey
+import io.github.potato573.aura.model.DropLogic
 import io.github.potato573.aura.model.FolderItem
 import io.github.potato573.aura.model.HomeItem
 import io.github.potato573.aura.model.HomeLayout
@@ -56,6 +57,8 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
     private lateinit var palette: Palette
 
     private var popup: PopupMenuView? = null
+    private var openFolder: FolderView? = null
+    private lateinit var drag: DragController
     private var resumed = false
     private var launchedFromDrawer = false
     private var wallpaperDarkText = false
@@ -85,6 +88,8 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         root.addView(home, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         root.addView(drawer, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         root.host = this
+        drag = DragController(root, dragHost)
+        root.touchInterceptor = { drag.onTouch(it) }
         setContentView(root)
 
         wireHome()
@@ -124,6 +129,7 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
             closeDrawer(animate = false)
         }
         popup?.dismiss()
+        openFolder?.close(animate = false)
     }
 
     override fun onDestroy() {
@@ -148,7 +154,9 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         // silently so the user returns to a clean home screen.
         val animate = resumed
         when {
+            drag.isActive -> Unit
             popup != null -> popup?.dismiss()
+            openFolder != null -> openFolder?.close(animate)
             drawerProgress > 0f -> closeDrawer(animate)
             home.workspace.currentPage != 0 -> home.workspace.snapToPage(0, animate)
         }
@@ -158,7 +166,9 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
     override fun onBackPressed() {
         // A launcher never finishes on back.
         when {
+            drag.isActive -> Unit
             popup != null -> popup?.dismiss()
+            openFolder != null -> openFolder?.close()
             drawerProgress > 0f -> closeDrawer()
             home.workspace.currentPage != 0 -> home.workspace.snapToPage(0)
         }
@@ -361,9 +371,9 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
             is FolderItem -> {
                 val apps = item.apps.mapNotNull { repo.get(it) }
                 if (apps.isEmpty()) return null
-                v.bindFolder(item.title, apps, icons)
-                // Folder UI arrives with drag and drop; until then a tap opens the first app.
-                v.setOnClickListener { launch(apps.first(), v, fromDrawer = false) }
+                v.bindFolder(item.title.ifEmpty { getString(R.string.folder_default_name) }, apps, icons)
+                v.setOnClickListener { openFolder(item, v) }
+                v.setOnLongClickListener { showFolderMenu(item, v); true }
             }
         }
         return v
@@ -379,11 +389,13 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
             v.showLabel = false
             v.item = key
             v.bindApp(entry, icons)
+            v.setColors(homeLabelColor(), onWallpaper = true)
             v.setOnClickListener { launch(entry, v, fromDrawer = false) }
             v.setOnLongClickListener { showAppMenu(entry, v, homeItem = null, inDock = true); true }
             dock.addView(v)
         }
-        dock.visibility = if (settings.showDock && dock.childCount > 0) View.VISIBLE else View.GONE
+        // An empty dock stays visible (as a quiet shelf) so apps can be dragged into it.
+        dock.visibility = if (settings.showDock) View.VISIBLE else View.GONE
     }
 
     private fun wireHome() {
@@ -438,8 +450,15 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         return r
     }
 
-    private fun showAppMenu(entry: AppEntry, v: View, homeItem: AppItem?, inDock: Boolean, fromDrawer: Boolean = false) {
-        if (popup != null) return
+    private fun showAppMenu(
+        entry: AppEntry,
+        v: IconView,
+        homeItem: AppItem?,
+        inDock: Boolean,
+        fromDrawer: Boolean = false,
+        folder: FolderItem? = null,
+    ) {
+        if (popup != null || drag.isActive) return
         v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         val shortcuts = actions.shortcuts(entry).map { info ->
             PopupMenuView.Entry(actions.shortcutIcon(info), info.shortLabel ?: "", tintIcon = false) {
@@ -459,6 +478,10 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
             inDock -> list += PopupMenuView.Entry(getDrawable(R.drawable.ic_remove), getString(R.string.remove_from_home)) {
                 store.update { it.removeFromDock(entry.key) }
             }
+            folder != null -> list += PopupMenuView.Entry(getDrawable(R.drawable.ic_remove), getString(R.string.remove_from_home)) {
+                openFolder?.close(animate = false)
+                store.update { it.removeFromFolder(folder.id, entry.key, settings.homeColumns, settings.homeRows, toGrid = false) }
+            }
         }
         list += PopupMenuView.Entry(getDrawable(R.drawable.ic_info), getString(R.string.app_info)) { actions.openAppInfo(entry) }
         if (fromDrawer) {
@@ -468,10 +491,108 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
             list += PopupMenuView.Entry(getDrawable(R.drawable.ic_delete), getString(R.string.uninstall)) { actions.uninstall(entry) }
         }
         showPopup(anchorRect(v), shortcuts, list)
+        val source = when {
+            homeItem != null -> DropLogic.Source.Grid(homeItem.id)
+            inDock -> DropLogic.Source.Dock(entry.key)
+            folder != null -> DropLogic.Source.InFolder(folder.id, entry.key)
+            fromDrawer && !layout.contains(entry.key) -> DropLogic.Source.External(entry.key)
+            else -> null
+        }
+        if (source != null) drag.arm(source, v, icons.peek(entry.key), root.lastTouchX, root.lastTouchY)
+    }
+
+    private fun showFolderMenu(folder: FolderItem, v: IconView) {
+        if (popup != null || drag.isActive) return
+        v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        showPopup(anchorRect(v), emptyList(), listOf(
+            PopupMenuView.Entry(getDrawable(R.drawable.ic_remove), getString(R.string.remove_from_home)) {
+                store.update { it.remove(folder.id) }
+            },
+        ))
+        drag.arm(DropLogic.Source.Grid(folder.id), v, null, root.lastTouchX, root.lastTouchY)
+    }
+
+    private fun openFolder(folder: FolderItem, v: IconView) {
+        if (openFolder != null || drag.isActive) return
+        val apps = folder.apps.mapNotNull { repo.get(it) }
+        if (apps.isEmpty()) return
+        val fv = FolderView(this, palette, icons, folder, apps, baseIconSize())
+        fv.onLaunch = { entry, iv -> launch(entry, iv, fromDrawer = false) }
+        fv.onLongPress = { entry, iv -> showAppMenu(entry, iv, homeItem = null, inDock = false, folder = folder) }
+        fv.onRename = { title -> store.update { it.renameFolder(folder.id, title) } }
+        fv.onClosed = { if (openFolder === fv) openFolder = null }
+        openFolder = fv
+        fv.open(root, anchorRect(v))
+    }
+
+    // ---- Drag and drop ----------------------------------------------------------------
+
+    private val dragHost = object : DragController.Host {
+        override val workspace: Workspace get() = home.workspace
+        override val dock: DockView get() = home.dock
+        override val dockEnabled: Boolean get() = settings.showDock
+        override val columns: Int get() = settings.homeColumns
+        override val rows: Int get() = settings.homeRows
+        override val highlightColor: Int get() = palette.accent
+
+        override fun onDragStart(source: DropLogic.Source) {
+            popup?.dismissNow()
+            openFolder?.close(animate = false)
+            if (drawerProgress > 0f) closeDrawer()
+            // The lifted icon leaves a gap where it was (not for drawer apps: they stay listed).
+            if (source !is DropLogic.Source.External) {
+                findHomeView(source)?.alpha = 0f
+            }
+        }
+
+        override fun occupantId(source: DropLogic.Source, target: DropLogic.Target): Long? =
+            DropLogic.occupant(store.layout, source, target, columns, rows)?.id
+
+        override fun commitDrop(source: DropLogic.Source, target: DropLogic.Target): Boolean {
+            val result = DropLogic.apply(store.layout, source, target, columns, rows, getString(R.string.folder_default_name))
+                ?: return false
+            store.update { result }
+            return true
+        }
+
+        override fun onDragEnd() {
+            // Drop empty pages left behind, keeping the user on the page they were looking at.
+            val before = home.workspace.currentPage
+            val trimmed = store.layout.trimPages()
+            if (trimmed.pageCount != store.layout.pageCount) {
+                store.update { trimmed }
+                home.workspace.snapToPage(before.coerceAtMost(trimmed.pageCount - 1), animate = false)
+            }
+            bindHome(store.layout)
+        }
+
+        override fun requestNewPage() {
+            store.update { it.addPage() }
+        }
+
+        override fun pageHasItems(page: Int): Boolean = store.layout.itemsOn(page).isNotEmpty()
+    }
+
+    /** The on-screen view currently showing [source], if any. */
+    private fun findHomeView(source: DropLogic.Source): View? {
+        when (source) {
+            is DropLogic.Source.Grid -> for (page in home.workspace.pages) {
+                for (i in 0 until page.childCount) {
+                    val c = page.getChildAt(i)
+                    if ((c as? IconView)?.let { (it.item as? HomeItem)?.id } == source.id) return c
+                }
+            }
+            is DropLogic.Source.Dock -> for (i in 0 until home.dock.childCount) {
+                val c = home.dock.getChildAt(i)
+                if ((c as? IconView)?.item == source.key) return c
+            }
+            else -> Unit
+        }
+        return null
     }
 
     private fun showHomeMenu(v: View) {
-        if (popup != null || drawerProgress > 0f) return
+        if (popup != null || drawerProgress > 0f || drag.isActive) return
         v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         val r = Rect(v.width / 2, v.height / 2, v.width / 2, v.height / 2)
         val anchor = anchorRect(v).let { full -> Rect(full.left + r.left, full.top + r.top, full.left + r.right, full.top + r.bottom) }
@@ -564,7 +685,8 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
 
     // ---- LauncherRoot.Host -------------------------------------------------------------
 
-    override fun isGestureBlocked(): Boolean = popup != null || home.workspace.isScrolling()
+    override fun isGestureBlocked(): Boolean =
+        popup != null || openFolder != null || drag.isActive || home.workspace.isScrolling()
 
     override fun isDrawerAtTop(): Boolean = drawer.isAtTop()
 
