@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings">Pengaturan launcher</string>
+    <string name="search_hint">Cari aplikasi</string>
+    <string name="home_empty_hint">Geser ke atas untuk semua aplikasi.\nTekan lama aplikasi untuk menaruhnya di sini.</string>
+    <string name="add_to_home">Tambah ke home</string>
+    <string name="add_to_dock">Tambah ke dock</string>
+    <string name="move_to_home">Pindah ke home</string>
+    <string name="move_to_dock">Pindah ke dock</string>
+    <string name="remove">Hapus</string>
+    <string name="app_info">Info aplikasi</string>
+    <string name="uninstall">Copot</string>
+    <string name="wallpaper">Ganti wallpaper</string>
+    <string name="already_added">Sudah ada</string>
+    <string name="dock_full">Dock penuh (maks %d)</string>
+    <string name="cannot_open">Aplikasi tidak bisa dibuka</string>
+    <string name="no_results">Aplikasi tidak ditemukan</string>
+    <string name="open_drawer">Semua aplikasi</string>
+
+    <string name="pref_cat_home">Layar home</string>
+    <string name="pref_columns">Jumlah kolom</string>
+    <string name="pref_labels">Tampilkan nama aplikasi</string>
+    <string name="pref_dock">Tampilkan dock</string>
+    <string name="pref_clock">Tampilkan jam</string>
+    <string name="pref_cat_drawer">Laci aplikasi</string>
+    <string name="pref_keyboard">Buka keyboard otomatis</string>
+    <string name="pref_keyboard_sum">Langsung ketik untuk mencari saat laci dibuka</string>
+    <string name="pref_cat_general">Umum</string>
+    <string name="pref_default">Jadikan launcher utama</string>
+    <string name="pref_default_sum">Pilih Pocket Launcher sebagai aplikasi home</string>
+    <string name="pref_reset">Atur ulang tata letak</string>
+    <string name="pref_reset_sum">Kosongkan layar home dan dock</string>
+    <string name="reset_done">Tata letak diatur ulang</string>
+</resources>

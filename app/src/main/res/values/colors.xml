@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="accent">#4F8CFF</color>
+    <color name="drawer_bg">#EB101216</color>
+    <color name="dock_bg">#33FFFFFF</color>
+    <color name="search_bg">#26FFFFFF</color>
+    <color name="icon_bg">#4F8CFF</color>
+</resources>

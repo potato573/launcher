@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pocket Launcher</string>
+    <string name="settings">Launcher settings</string>
+    <string name="search_hint">Search apps</string>
+    <string name="home_empty_hint">Swipe up for all apps.\nLong-press an app to add it here.</string>
+    <string name="add_to_home">Add to home</string>
+    <string name="add_to_dock">Add to dock</string>
+    <string name="move_to_home">Move to home</string>
+    <string name="move_to_dock">Move to dock</string>
+    <string name="remove">Remove</string>
+    <string name="app_info">App info</string>
+    <string name="uninstall">Uninstall</string>
+    <string name="wallpaper">Change wallpaper</string>
+    <string name="already_added">Already there</string>
+    <string name="dock_full">Dock is full (max %d)</string>
+    <string name="cannot_open">Cannot open app</string>
+    <string name="no_results">No apps found</string>
+    <string name="open_drawer">All apps</string>
+
+    <string name="pref_cat_home">Home screen</string>
+    <string name="pref_columns">Grid columns</string>
+    <string name="pref_labels">Show app names</string>
+    <string name="pref_dock">Show dock</string>
+    <string name="pref_clock">Show clock</string>
+    <string name="pref_cat_drawer">App drawer</string>
+    <string name="pref_keyboard">Open keyboard automatically</string>
+    <string name="pref_keyboard_sum">Start typing to search right after opening the drawer</string>
+    <string name="pref_cat_general">General</string>
+    <string name="pref_default">Set as default launcher</string>
+    <string name="pref_default_sum">Choose Pocket Launcher as your home app</string>
+    <string name="pref_reset">Reset layout</string>
+    <string name="pref_reset_sum">Clear home screen and dock</string>
+    <string name="reset_done">Layout reset</string>
+</resources>
