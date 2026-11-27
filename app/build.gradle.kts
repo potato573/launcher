@@ -36,6 +36,8 @@ android {
         abortOnError = true
         warningsAsErrors = false
         checkReleaseBuilds = false
+        textReport = true
+        textOutput = file("stdout")
     }
     testOptions {
         unitTests.isIncludeAndroidResources = true

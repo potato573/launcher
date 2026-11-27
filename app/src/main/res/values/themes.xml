@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Home: fully transparent over the system wallpaper, drawn edge to edge. -->
-    <style name="Theme.Aura.Home" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+    <style name="Theme.Aura.Home.Base" parent="@android:style/Theme.DeviceDefault.NoActionBar">
         <item name="android:windowShowWallpaper">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:colorBackgroundCacheHint">@null</item>
@@ -9,11 +9,10 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
-        <item name="android:enforceNavigationBarContrast">false</item>
-        <item name="android:enforceStatusBarContrast">false</item>
         <item name="android:windowAnimationStyle">@null</item>
     </style>
+
+    <style name="Theme.Aura.Home" parent="Theme.Aura.Home.Base" />
 
     <!-- Settings: colours are applied in code from the AURA palette (it can differ from the system theme). -->
     <style name="Theme.Aura.Settings" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">

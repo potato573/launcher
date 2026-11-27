@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Aura.Home.V27" parent="Theme.Aura.Home.Base">
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+    <!-- No forced scrim behind transparent system bars: the wallpaper shows through. -->
+    <style name="Theme.Aura.Home" parent="Theme.Aura.Home.V27">
+        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+    </style>
+</resources>
