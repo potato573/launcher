@@ -5,7 +5,6 @@
 
     <!-- Home -->
     <string name="search_hint">Search apps</string>
-    <string name="search_web">Search the web for “%1$s”</string>
     <string name="no_results">No apps match “%1$s”</string>
     <string name="page_indicator">Page %1$d of %2$d</string>
     <string name="default_prompt_title">Make AURA your home screen</string>
@@ -81,4 +80,6 @@
     <string name="blur_unavailable">This phone cannot blur right now (needs Android 12 or later, and battery saver off). Panels use a denser tint instead.</string>
     <string name="glass_transparency">Panel transparency</string>
     <string name="glass_transparency_summary">How much of the wallpaper shows through panels, the dock and the search bar.</string>
+    <string name="hide_nav_bar">Hide navigation bar</string>
+    <string name="hide_nav_bar_summary">Swipe up from the bottom edge to show it again briefly. Works with button navigation.</string>
 </resources>

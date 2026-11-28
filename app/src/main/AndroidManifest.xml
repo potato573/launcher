@@ -18,9 +18,6 @@
             <action android:name="android.media.action.STILL_IMAGE_CAMERA" />
         </intent>
         <intent>
-            <action android:name="android.intent.action.WEB_SEARCH" />
-        </intent>
-        <intent>
             <action android:name="android.intent.action.SHOW_ALARMS" />
         </intent>
     </queries>

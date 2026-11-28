@@ -3,7 +3,6 @@
     <string name="settings_title">Pengaturan AURA</string>
 
     <string name="search_hint">Cari aplikasi</string>
-    <string name="search_web">Cari “%1$s” di web</string>
     <string name="no_results">Tidak ada aplikasi “%1$s”</string>
     <string name="page_indicator">Halaman %1$d dari %2$d</string>
     <string name="default_prompt_title">Jadikan AURA layar utama Anda</string>
@@ -76,4 +75,6 @@
     <string name="blur_unavailable">HP ini belum bisa blur saat ini (perlu Android 12 ke atas dan mode hemat baterai mati). Panel memakai warna yang lebih pekat sebagai gantinya.</string>
     <string name="glass_transparency">Transparansi panel</string>
     <string name="glass_transparency_summary">Seberapa banyak wallpaper terlihat menembus panel, dock, dan kolom pencarian.</string>
+    <string name="hide_nav_bar">Sembunyikan bilah navigasi</string>
+    <string name="hide_nav_bar_summary">Geser dari tepi bawah untuk menampilkannya sebentar. Berlaku untuk navigasi tombol.</string>
 </resources>

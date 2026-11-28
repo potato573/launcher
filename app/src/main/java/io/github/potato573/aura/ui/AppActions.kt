@@ -2,7 +2,6 @@ package io.github.potato573.aura.ui
 
 import android.app.Activity
 import android.app.ActivityOptions
-import android.app.SearchManager
 import android.app.role.RoleManager
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -96,10 +95,6 @@ class AppActions(private val activity: Activity) {
         val r = Rect()
         from?.getGlobalVisibleRect(r)
         launcherApps.startShortcut(info, r, null)
-    }
-
-    fun openWebSearch(query: String) = guard {
-        activity.startActivity(Intent(Intent.ACTION_WEB_SEARCH).putExtra(SearchManager.QUERY, query))
     }
 
     fun openAlarms() = guard { activity.startActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS)) }

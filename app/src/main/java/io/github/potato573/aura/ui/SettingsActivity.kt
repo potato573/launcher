@@ -112,6 +112,9 @@ class SettingsActivity : Activity() {
         group.addView(ui.toggle(getString(R.string.home_labels), checked = settings.homeLabels) { settings.homeLabels = it })
         group.addView(ui.toggle(getString(R.string.show_clock), checked = settings.showClock) { settings.showClock = it })
         group.addView(ui.toggle(getString(R.string.show_search), checked = settings.showSearch) { settings.showSearch = it })
+        group.addView(ui.toggle(getString(R.string.hide_nav_bar), getString(R.string.hide_nav_bar_summary), settings.hideNavBar) {
+            settings.hideNavBar = it
+        })
         group.addView(ui.toggle(getString(R.string.show_dock), checked = settings.showDock) { settings.showDock = it })
 
         list.addView(ui.section(getString(R.string.section_drawer)))

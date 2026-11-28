@@ -215,10 +215,43 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         }
     }
 
+    /**
+     * Optionally hides the navigation bar (sticky immersive mode): it slides in on a swipe
+     * from the bottom edge and hides itself again. This is what gives the buttonless look on
+     * phones whose system does not allow full-screen gestures for third-party launchers.
+     */
+    private fun applyNavBarMode() {
+        val hide = settings.hideNavBar
+        if (Build.VERSION.SDK_INT >= 30) {
+            val c = window.insetsController ?: return
+            if (hide) {
+                c.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                c.hide(WindowInsets.Type.navigationBars())
+            } else {
+                c.show(WindowInsets.Type.navigationBars())
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            val flags = window.decorView.systemUiVisibility
+            val nav = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = if (hide) flags or nav else flags and nav.inv()
+        }
+        root.requestApplyInsets()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Another window (a dialog, the shade) may have brought the bar back.
+        if (hasFocus && settings.hideNavBar) applyNavBarMode()
+    }
+
     private fun applyInsets(insets: WindowInsets) {
         val bars = insets.systemBarsCompat()
         val navBottom = if (Build.VERSION.SDK_INT >= 30) {
             bars.bottom
+        } else if (settings.hideNavBar) {
+            0
         } else {
             @Suppress("DEPRECATION")
             insets.stableInsetBottom
@@ -304,6 +337,7 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
     private fun applySettings() {
         palette = Palette.from(this, settings)
         lastLightBars = null
+        applyNavBarMode()
         blurOn = palette.blur
         blurMax = Glass.maxRadius(this, settings)
         lastBlurRadius = -1
@@ -471,12 +505,6 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
     private fun wireDrawer() {
         drawer.onLaunch = { entry, v -> launch(entry, v, fromDrawer = true) }
         drawer.onLongPress = { entry, v -> showAppMenu(entry, v, homeItem = null, inDock = false, fromDrawer = true) }
-        drawer.onWebSearch = { q ->
-            if (q.isNotEmpty()) {
-                launchedFromDrawer = true
-                actions.openWebSearch(q)
-            }
-        }
     }
 
     // ---- Actions ----------------------------------------------------------------------

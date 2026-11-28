@@ -43,7 +43,6 @@ class DrawerView(context: Context, private val icons: IconCache) : FrameLayout(c
 
     var onLaunch: ((AppEntry, View) -> Unit)? = null
     var onLongPress: ((AppEntry, IconView) -> Unit)? = null
-    var onWebSearch: ((String) -> Unit)? = null
 
     private var allApps: List<AppEntry> = emptyList()
     private var searchableApps: List<AppEntry> = emptyList()
@@ -120,18 +119,6 @@ class DrawerView(context: Context, private val icons: IconCache) : FrameLayout(c
         setPadding(dp(32), dp(48), dp(32), dp(16))
     }
 
-    private val webSearch = TextView(context).apply {
-        gravity = Gravity.CENTER_VERTICAL
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-        typeface = Fonts.sans(500)
-        setPadding(dp(20), 0, dp(20), 0)
-        compoundDrawablePadding = dp(14)
-        visibility = GONE
-        isClickable = true
-        isFocusable = true
-        setOnClickListener { onWebSearch?.invoke(search.text.toString().trim()) }
-    }
-
     private val adapter = object : BaseAdapter() {
         override fun getCount() = shown.size
         override fun getItem(position: Int) = shown[position]
@@ -165,9 +152,6 @@ class DrawerView(context: Context, private val icons: IconCache) : FrameLayout(c
         content.addView(searchBox, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, searchH).apply {
             setMargins(dp(20), dp(12), dp(20), dp(12))
         })
-        content.addView(webSearch, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(48)).apply {
-            setMargins(dp(12), 0, dp(12), dp(4))
-        })
         content.addView(empty, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         content.addView(grid, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
         addView(content, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
@@ -184,8 +168,6 @@ class DrawerView(context: Context, private val icons: IconCache) : FrameLayout(c
                 val first = shown.firstOrNull()
                 if (first != null && isSearching()) {
                     onLaunch?.invoke(first, grid.getChildAt(0) ?: v)
-                } else if (isSearching()) {
-                    onWebSearch?.invoke(search.text.toString().trim())
                 }
                 true
             } else {
@@ -211,11 +193,6 @@ class DrawerView(context: Context, private val icons: IconCache) : FrameLayout(c
         search.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null)
         clear.setColorFilter(p.textSecondary)
         empty.setTextColor(p.textSecondary)
-        webSearch.setTextColor(p.accentOnSurface)
-        webSearch.background = roundRect(p.accentSoft, dp(24f))
-        val web = context.getDrawable(R.drawable.ic_search)?.mutate()
-        web?.setTint(p.accentOnSurface)
-        webSearch.setCompoundDrawablesRelativeWithIntrinsicBounds(web, null, null, null)
         if (Build.VERSION.SDK_INT >= 29) {
             search.textCursorDrawable?.mutate()?.setTint(p.accentOnSurface)
             grid.setEdgeEffectColor(p.accent)
@@ -254,8 +231,6 @@ class DrawerView(context: Context, private val icons: IconCache) : FrameLayout(c
         adapter.notifyDataSetChanged()
         clear.visibility = if (q.isEmpty()) GONE else VISIBLE
         val searching = q.isNotBlank()
-        webSearch.visibility = if (searching && onWebSearch != null) VISIBLE else GONE
-        webSearch.text = context.getString(R.string.search_web, q.trim())
         val none = searching && shown.isEmpty()
         empty.visibility = if (none) VISIBLE else GONE
         if (none) empty.text = context.getString(R.string.no_results, q.trim())

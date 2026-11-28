@@ -66,6 +66,11 @@ class Settings(context: Context) {
         get() = sp.getInt(K_GLASS, 40).coerceIn(MIN_TRANSPARENCY, MAX_TRANSPARENCY)
         set(value) = sp.edit().putInt(K_GLASS, value.coerceIn(MIN_TRANSPARENCY, MAX_TRANSPARENCY)).apply()
 
+    /** Hide the system navigation bar; a swipe from the bottom edge brings it back briefly. */
+    var hideNavBar: Boolean
+        get() = sp.getBoolean(K_HIDE_NAV, false)
+        set(value) = sp.edit().putBoolean(K_HIDE_NAV, value).apply()
+
     var homeLabels: Boolean
         get() = sp.getBoolean(K_HOME_LABELS, true)
         set(value) = sp.edit().putBoolean(K_HOME_LABELS, value).apply()
@@ -114,6 +119,7 @@ class Settings(context: Context) {
         K_ICON_SCALE to iconScale,
         K_BLUR to blurStrength,
         K_GLASS to glassTransparency,
+        K_HIDE_NAV to hideNavBar,
         K_HOME_LABELS to homeLabels,
         K_SHOW_DOCK to showDock,
         K_SHOW_CLOCK to showClock,
@@ -133,7 +139,7 @@ class Settings(context: Context) {
                 K_ICON_SCALE -> if (v is Int) e.putInt(k, v.coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE))
                 K_BLUR -> if (v is Int) e.putInt(k, v.coerceIn(0, 100))
                 K_GLASS -> if (v is Int) e.putInt(k, v.coerceIn(MIN_TRANSPARENCY, MAX_TRANSPARENCY))
-                K_HOME_LABELS, K_SHOW_DOCK, K_SHOW_CLOCK, K_SHOW_SEARCH, K_DRAWER_KEYBOARD ->
+                K_HIDE_NAV, K_HOME_LABELS, K_SHOW_DOCK, K_SHOW_CLOCK, K_SHOW_SEARCH, K_DRAWER_KEYBOARD ->
                     if (v is Boolean) e.putBoolean(k, v)
             }
         }
@@ -152,6 +158,7 @@ class Settings(context: Context) {
         const val K_ICON_SCALE = "icon_scale"
         const val K_BLUR = "blur_strength"
         const val K_GLASS = "glass_transparency"
+        const val K_HIDE_NAV = "hide_nav_bar"
         const val K_HOME_LABELS = "home_labels"
         const val K_SHOW_DOCK = "show_dock"
         const val K_SHOW_CLOCK = "show_clock"
