@@ -27,14 +27,18 @@ class AppActions(private val activity: Activity) {
 
     private val launcherApps = activity.getSystemService(LauncherApps::class.java)!!
 
-    /** Starts [app], animating the new window out of [from]'s icon. Returns false on failure. */
+    /**
+     * Starts [app], revealing the new window out of [from]'s icon: the app opens as a clip
+     * that grows from the icon to the full screen (the public, supported launcher animation).
+     * Returns false on failure.
+     */
     fun launch(app: AppEntry, from: View?): Boolean {
         val bounds = Rect()
         var opts: ActivityOptions? = null
         if (from != null) {
             val icon = Rect()
             if (from is IconView) from.iconBounds(icon) else icon.set(0, 0, from.width, from.height)
-            opts = ActivityOptions.makeScaleUpAnimation(from, icon.left, icon.top, icon.width(), icon.height())
+            opts = ActivityOptions.makeClipRevealAnimation(from, icon.left, icon.top, icon.width(), icon.height())
             val loc = IntArray(2)
             from.getLocationOnScreen(loc)
             bounds.set(loc[0] + icon.left, loc[1] + icon.top, loc[0] + icon.right, loc[1] + icon.bottom)

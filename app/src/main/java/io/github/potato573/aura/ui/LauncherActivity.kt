@@ -80,6 +80,45 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
     override var drawerProgress = 0f
         private set
 
+    // ---- App launch motion ---------------------------------------------------------------
+
+    /** 0 = launcher at rest, 1 = launcher pushed back behind a starting app. */
+    private val launchSpring by lazy {
+        SpringAnimator(Spring.STIFFNESS_LOW, 0.9f, 0.002f, root) { applyLaunchMotion(it) }
+    }
+    private var leftForApp = false
+    private val launchSafety = Runnable {
+        // The app never took over (it crashed or was blocked): bring the launcher back.
+        if (!leftForApp) endLaunchMotion()
+    }
+
+    private fun applyLaunchMotion(p: Float) {
+        root.scaleX = 1f + 0.08f * p
+        root.scaleY = 1f + 0.08f * p
+        root.alpha = 1f - 0.65f * p
+    }
+
+    /** The launcher zooms gently towards the viewer while the app opens out of its icon. */
+    private fun startLaunchMotion(from: View) {
+        val r = anchorRect(from)
+        root.pivotX = r.centerX().toFloat()
+        root.pivotY = r.centerY().toFloat()
+        root.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        launchSpring.spring.dampingRatio = 1f
+        launchSpring.animateTo(1f) { root.setLayerType(View.LAYER_TYPE_NONE, null) }
+        main.removeCallbacks(launchSafety)
+        main.postDelayed(launchSafety, 1500)
+    }
+
+    /** Settles the launcher back to normal (springs in when it comes into view again). */
+    private fun endLaunchMotion() {
+        main.removeCallbacks(launchSafety)
+        if (launchSpring.spring.value <= 0.001f && root.alpha == 1f) return
+        root.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        launchSpring.spring.dampingRatio = 0.85f
+        launchSpring.animateTo(0f) { root.setLayerType(View.LAYER_TYPE_NONE, null) }
+    }
+
     private val drawerSpring by lazy {
         SpringAnimator(Spring.STIFFNESS_MEDIUM, 0.9f, 0.0005f, root) { applyDrawerProgress(it) }
     }
@@ -127,12 +166,15 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
     override fun onResume() {
         super.onResume()
         resumed = true
+        leftForApp = false
+        endLaunchMotion()
         updateDefaultPrompt()
     }
 
     override fun onPause() {
         super.onPause()
         resumed = false
+        if (launchSpring.spring.value > 0.001f || launchSpring.spring.target > 0.5f) leftForApp = true
         store.flush()
     }
 
@@ -153,6 +195,7 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         store.removeListener(layoutListener)
         repo.removeListener(appsListener)
         drawerSpring.cancel()
+        main.removeCallbacks(launchSafety)
         stopWatchingBlur()
         if (Build.VERSION.SDK_INT >= 27) {
             try {
@@ -512,6 +555,7 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
     private fun launch(entry: AppEntry, from: View, fromDrawer: Boolean) {
         if (actions.launch(entry, from)) {
             if (fromDrawer) launchedFromDrawer = true
+            startLaunchMotion(from)
         }
     }
 
