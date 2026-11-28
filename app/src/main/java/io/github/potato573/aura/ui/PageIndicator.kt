@@ -15,9 +15,17 @@ class PageIndicator(context: Context) : View(context) {
         set(value) {
             if (field != value) {
                 field = value
-                visibility = if (value > 1) VISIBLE else INVISIBLE
+                visibility = if (value > 1 && dotsEnabled) VISIBLE else INVISIBLE
                 updateDescription()
                 invalidate()
+            }
+        }
+    /** The user can switch the dots off entirely. */
+    var dotsEnabled = true
+        set(value) {
+            if (field != value) {
+                field = value
+                visibility = if (value && count > 1) VISIBLE else INVISIBLE
             }
         }
     var position = 0f

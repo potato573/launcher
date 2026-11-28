@@ -49,6 +49,7 @@ class DrawerView(context: Context, private val icons: IconCache) : FrameLayout(c
     private var shown: List<AppEntry> = emptyList()
     private var palette: Palette? = null
     private var iconSize = dp(54)
+    private var showLabels = true
 
     private val sheetPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val sheetRect = android.graphics.RectF()
@@ -138,6 +139,7 @@ class DrawerView(context: Context, private val icons: IconCache) : FrameLayout(c
             val p = palette
             if (p != null) v.setColors(p.textPrimary, onWallpaper = false)
             v.iconSize = iconSize
+            v.showLabel = showLabels
             v.item = app
             v.bindApp(app, icons)
             v.highlightColor = p?.accentOnSurface ?: 0
@@ -200,6 +202,13 @@ class DrawerView(context: Context, private val icons: IconCache) : FrameLayout(c
         search.highlightColor = p.accentSoft
         adapter.notifyDataSetChanged()
         invalidate()
+    }
+
+    fun setLabels(show: Boolean) {
+        if (showLabels != show) {
+            showLabels = show
+            adapter.notifyDataSetChanged()
+        }
     }
 
     fun setColumns(columns: Int) {

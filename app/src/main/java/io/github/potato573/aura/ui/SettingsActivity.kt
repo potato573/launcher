@@ -101,6 +101,24 @@ class SettingsActivity : Activity() {
             restyleIfNeeded()
         })
 
+        list.addView(ui.section(getString(R.string.section_motion)))
+        group = ui.group(list)
+        val effects = Settings.PageEffect.entries
+        group.addView(ui.segmented(
+            getString(R.string.page_effect),
+            listOf(getString(R.string.effect_slide), getString(R.string.effect_zoom), getString(R.string.effect_tilt)),
+            effects.indexOf(settings.pageEffect),
+        ) { settings.pageEffect = effects[it] })
+        val speeds = Settings.Speed.entries
+        group.addView(ui.segmented(
+            getString(R.string.anim_speed),
+            listOf(getString(R.string.speed_calm), getString(R.string.speed_normal), getString(R.string.speed_snappy)),
+            speeds.indexOf(settings.animSpeed),
+        ) { settings.animSpeed = speeds[it] })
+        group.addView(ui.toggle(getString(R.string.haptics), getString(R.string.haptics_summary), settings.haptics) {
+            settings.haptics = it
+        })
+
         list.addView(ui.section(getString(R.string.section_home)))
         group = ui.group(list)
         group.addView(ui.stepper(getString(R.string.home_columns), settings.homeColumns, Settings.MIN_COLUMNS, Settings.MAX_COLUMNS) {
@@ -112,6 +130,12 @@ class SettingsActivity : Activity() {
         group.addView(ui.toggle(getString(R.string.home_labels), checked = settings.homeLabels) { settings.homeLabels = it })
         group.addView(ui.toggle(getString(R.string.show_clock), checked = settings.showClock) { settings.showClock = it })
         group.addView(ui.toggle(getString(R.string.show_search), checked = settings.showSearch) { settings.showSearch = it })
+        group.addView(ui.toggle(getString(R.string.show_indicator), getString(R.string.show_indicator_summary), settings.showIndicator) {
+            settings.showIndicator = it
+        })
+        group.addView(ui.toggle(getString(R.string.wallpaper_scroll), getString(R.string.wallpaper_scroll_summary), settings.wallpaperScroll) {
+            settings.wallpaperScroll = it
+        })
         group.addView(ui.toggle(getString(R.string.hide_nav_bar), getString(R.string.hide_nav_bar_summary), settings.hideNavBar) {
             settings.hideNavBar = it
         })
@@ -121,6 +145,9 @@ class SettingsActivity : Activity() {
         group = ui.group(list)
         group.addView(ui.stepper(getString(R.string.drawer_columns), settings.drawerColumns, Settings.MIN_COLUMNS, Settings.MAX_COLUMNS) {
             settings.drawerColumns = it
+        })
+        group.addView(ui.toggle(getString(R.string.drawer_labels), checked = settings.drawerLabels) {
+            settings.drawerLabels = it
         })
         group.addView(ui.toggle(getString(R.string.drawer_keyboard), getString(R.string.drawer_keyboard_summary), settings.drawerKeyboard) {
             settings.drawerKeyboard = it

@@ -13,6 +13,14 @@ class Settings(context: Context) {
 
     enum class Theme(val id: String) { SYSTEM("system"), LIGHT("light"), DARK("dark") }
 
+    /** How home pages move while swiping. */
+    enum class PageEffect(val id: String) { SLIDE("slide"), ZOOM("zoom"), TILT("tilt") }
+
+    /** Tempo of all animations. */
+    enum class Speed(val id: String, val factor: Float) {
+        CALM("calm", 0.8f), NORMAL("normal", 1f), SNAPPY("snappy", 1.3f)
+    }
+
     private val sp: SharedPreferences = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
     private val listeners = LinkedHashSet<() -> Unit>()
     private val spListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
@@ -34,6 +42,31 @@ class Settings(context: Context) {
     var theme: Theme
         get() = Theme.entries.firstOrNull { it.id == sp.getString(K_THEME, null) } ?: Theme.SYSTEM
         set(value) = sp.edit().putString(K_THEME, value.id).apply()
+
+    var pageEffect: PageEffect
+        get() = PageEffect.entries.firstOrNull { it.id == sp.getString(K_EFFECT, null) } ?: PageEffect.SLIDE
+        set(value) = sp.edit().putString(K_EFFECT, value.id).apply()
+
+    var animSpeed: Speed
+        get() = Speed.entries.firstOrNull { it.id == sp.getString(K_SPEED, null) } ?: Speed.NORMAL
+        set(value) = sp.edit().putString(K_SPEED, value.id).apply()
+
+    var haptics: Boolean
+        get() = sp.getBoolean(K_HAPTICS, true)
+        set(value) = sp.edit().putBoolean(K_HAPTICS, value).apply()
+
+    /** The wallpaper drifts with the pages (parallax). */
+    var wallpaperScroll: Boolean
+        get() = sp.getBoolean(K_WP_SCROLL, true)
+        set(value) = sp.edit().putBoolean(K_WP_SCROLL, value).apply()
+
+    var showIndicator: Boolean
+        get() = sp.getBoolean(K_INDICATOR, true)
+        set(value) = sp.edit().putBoolean(K_INDICATOR, value).apply()
+
+    var drawerLabels: Boolean
+        get() = sp.getBoolean(K_DRAWER_LABELS, true)
+        set(value) = sp.edit().putBoolean(K_DRAWER_LABELS, value).apply()
 
     var accent: Int
         get() = sp.getInt(K_ACCENT, Palette.ACCENTS.first())
@@ -112,6 +145,12 @@ class Settings(context: Context) {
     /** Values included in a backup. Only user-facing preferences, never internal state. */
     fun export(): Map<String, Any> = linkedMapOf(
         K_THEME to theme.id,
+        K_EFFECT to pageEffect.id,
+        K_SPEED to animSpeed.id,
+        K_HAPTICS to haptics,
+        K_WP_SCROLL to wallpaperScroll,
+        K_INDICATOR to showIndicator,
+        K_DRAWER_LABELS to drawerLabels,
         K_ACCENT to accent,
         K_HOME_COLUMNS to homeColumns,
         K_HOME_ROWS to homeRows,
@@ -133,6 +172,9 @@ class Settings(context: Context) {
         for ((k, v) in values) {
             when (k) {
                 K_THEME -> if (v is String && Theme.entries.any { it.id == v }) e.putString(k, v)
+                K_EFFECT -> if (v is String && PageEffect.entries.any { it.id == v }) e.putString(k, v)
+                K_SPEED -> if (v is String && Speed.entries.any { it.id == v }) e.putString(k, v)
+                K_HAPTICS, K_WP_SCROLL, K_INDICATOR, K_DRAWER_LABELS -> if (v is Boolean) e.putBoolean(k, v)
                 K_ACCENT -> if (v is Int) e.putInt(k, v)
                 K_HOME_COLUMNS, K_DRAWER_COLUMNS -> if (v is Int) e.putInt(k, v.coerceIn(MIN_COLUMNS, MAX_COLUMNS))
                 K_HOME_ROWS -> if (v is Int) e.putInt(k, v.coerceIn(MIN_ROWS, MAX_ROWS))
@@ -152,6 +194,12 @@ class Settings(context: Context) {
         private const val FILE = "aura_settings"
         const val K_THEME = "theme"
         const val K_ACCENT = "accent"
+        const val K_EFFECT = "page_effect"
+        const val K_SPEED = "anim_speed"
+        const val K_HAPTICS = "haptics"
+        const val K_WP_SCROLL = "wallpaper_scroll"
+        const val K_INDICATOR = "show_indicator"
+        const val K_DRAWER_LABELS = "drawer_labels"
         const val K_HOME_COLUMNS = "home_columns"
         const val K_HOME_ROWS = "home_rows"
         const val K_DRAWER_COLUMNS = "drawer_columns"

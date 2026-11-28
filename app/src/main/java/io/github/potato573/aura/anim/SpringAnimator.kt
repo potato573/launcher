@@ -35,7 +35,7 @@ class SpringAnimator(
             val dt = if (lastFrameNanos == 0L) 1f / 60f else (frameTimeNanos - lastFrameNanos) / 1e9f
             lastFrameNanos = frameTimeNanos
             // Clamp long gaps (e.g. after the app was paused) so motion never jumps.
-            spring.step(dt.coerceIn(0f, 1f / 24f))
+            spring.step(dt.coerceIn(0f, 1f / 24f) * Motion.speed)
             if (spring.isAtRest(valueThreshold, valueThreshold * 10f)) {
                 spring.snapToTarget()
                 isRunning = false

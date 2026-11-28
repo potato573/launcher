@@ -87,6 +87,11 @@ class LauncherSmokeTest {
         app.settings.showDock = false
         app.settings.glassTransparency = 70
         app.settings.blurStrength = 0
+        app.settings.pageEffect = io.github.potato573.aura.data.Settings.PageEffect.TILT
+        app.settings.animSpeed = io.github.potato573.aura.data.Settings.Speed.SNAPPY
+        app.settings.showIndicator = false
+        app.settings.drawerLabels = false
+        app.settings.hideNavBar = true
         app.settings.setHidden(ComponentKey("a", "a.B"), true)
         settle()
         assertTrue(launcher.window.decorView.visibility == View.VISIBLE)

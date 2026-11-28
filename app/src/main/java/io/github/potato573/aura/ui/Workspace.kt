@@ -39,6 +39,23 @@ class Workspace(context: Context) : ViewGroup(context) {
     private var dragging = false
     private val wallpaper = WallpaperManager.getInstance(context)
 
+    /** Page transition style; changing it re-applies the transforms immediately. */
+    var effect = io.github.potato573.aura.data.Settings.PageEffect.SLIDE
+        set(value) {
+            if (field != value) {
+                field = value
+                applyEffect(scrollX.toFloat() / width.coerceAtLeast(1))
+            }
+        }
+
+    /** Wallpaper drifts with the pages. */
+    var wallpaperScroll = true
+        set(value) {
+            field = value
+            updateWallpaper(scrollX.toFloat() / width.coerceAtLeast(1))
+        }
+    private var layersOn = false
+
     private val scroller = SpringAnimator(Spring.STIFFNESS_LOW, 0.92f, 0.5f, this) { x ->
         scrollTo(x.roundToInt(), 0)
     }
@@ -51,9 +68,11 @@ class Workspace(context: Context) : ViewGroup(context) {
         val x = (target * width).toFloat()
         if (animate && width > 0) {
             if (!scroller.isRunning) scroller.spring.value = scrollX.toFloat()
-            scroller.animateTo(x) { onPageSettled?.invoke(target) }
+            setLayers(true)
+            scroller.animateTo(x) { setLayers(false); onPageSettled?.invoke(target) }
         } else {
             scroller.snapTo(x)
+            setLayers(false)
             onPageSettled?.invoke(target)
         }
     }
@@ -64,10 +83,72 @@ class Workspace(context: Context) : ViewGroup(context) {
         val pos = x.toFloat() / w
         onScroll?.invoke(pos)
         updateWallpaper(pos)
+        applyEffect(pos)
+    }
+
+    /**
+     * Per-page transforms from the distance to the current scroll position. Slide leaves pages
+     * untouched. Zoom shrinks and fades pages as they leave. Tilt turns them like a door.
+     * Pages that are fully off screen are reset so nothing stays transformed.
+     */
+    private fun applyEffect(pos: Float) {
+        val n = childCount
+        val w = width.toFloat()
+        for (i in 0 until n) {
+            val c = getChildAt(i)
+            val off = i - pos
+            val t = abs(off).coerceIn(0f, 1f)
+            if (effect == io.github.potato573.aura.data.Settings.PageEffect.SLIDE || t >= 1f && abs(off) > 1.2f) {
+                if (c.scaleX != 1f || c.alpha != 1f || c.rotationY != 0f) {
+                    c.scaleX = 1f
+                    c.scaleY = 1f
+                    c.alpha = 1f
+                    c.rotationY = 0f
+                }
+                continue
+            }
+            when (effect) {
+                io.github.potato573.aura.data.Settings.PageEffect.ZOOM -> {
+                    val s = 1f - 0.16f * t
+                    c.scaleX = s
+                    c.scaleY = s
+                    c.alpha = 1f - 0.75f * t
+                    c.rotationY = 0f
+                }
+                io.github.potato573.aura.data.Settings.PageEffect.TILT -> {
+                    c.cameraDistance = w * 8f
+                    c.pivotX = if (off > 0) 0f else w
+                    c.pivotY = c.height / 2f
+                    c.rotationY = -off * 28f
+                    c.scaleX = 1f
+                    c.scaleY = 1f
+                    c.alpha = 1f - 0.5f * t
+                }
+                else -> Unit
+            }
+            if (effect == io.github.potato573.aura.data.Settings.PageEffect.ZOOM) {
+                c.pivotX = w / 2f
+                c.pivotY = c.height / 2f
+            }
+        }
+    }
+
+    /** Hardware layers keep transformed pages cheap while they move. */
+    private fun setLayers(on: Boolean) {
+        val want = on && effect != io.github.potato573.aura.data.Settings.PageEffect.SLIDE
+        if (layersOn == want) return
+        layersOn = want
+        for (i in 0 until childCount) {
+            getChildAt(i).setLayerType(if (want) LAYER_TYPE_HARDWARE else LAYER_TYPE_NONE, null)
+        }
     }
 
     private fun updateWallpaper(pos: Float) {
         val token = windowToken ?: return
+        if (!wallpaperScroll) {
+            wallpaper.setWallpaperOffsets(token, 0.5f, 0.5f)
+            return
+        }
         val n = pageCount
         val step = if (n > 1) 1f / (n - 1) else 0f
         wallpaper.setWallpaperOffsetSteps(step, 1f)
@@ -124,6 +205,7 @@ class Workspace(context: Context) : ViewGroup(context) {
 
     private fun startDrag(ev: MotionEvent) {
         dragging = true
+        setLayers(true)
         lastX = ev.x
         parent?.requestDisallowInterceptTouchEvent(true)
         velocityTracker?.recycle()
@@ -160,7 +242,7 @@ class Workspace(context: Context) : ViewGroup(context) {
                 }.coerceIn(0, pageCount - 1)
                 currentPage = target
                 scroller.spring.value = scrollX.toFloat()
-                scroller.animateTo((target * w).toFloat(), -vx) { onPageSettled?.invoke(target) }
+                scroller.animateTo((target * w).toFloat(), -vx) { setLayers(false); onPageSettled?.invoke(target) }
             }
         }
         return true

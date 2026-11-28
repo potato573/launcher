@@ -82,4 +82,20 @@
     <string name="glass_transparency_summary">How much of the wallpaper shows through panels, the dock and the search bar.</string>
     <string name="hide_nav_bar">Hide navigation bar</string>
     <string name="hide_nav_bar_summary">Swipe up from the bottom edge to show it again briefly. Works with button navigation.</string>
+    <string name="section_motion">Motion</string>
+    <string name="page_effect">Page transition</string>
+    <string name="effect_slide">Slide</string>
+    <string name="effect_zoom">Zoom</string>
+    <string name="effect_tilt">Tilt</string>
+    <string name="anim_speed">Animation speed</string>
+    <string name="speed_calm">Calm</string>
+    <string name="speed_normal">Normal</string>
+    <string name="speed_snappy">Snappy</string>
+    <string name="haptics">Haptic feedback</string>
+    <string name="haptics_summary">A short vibration when you lift an icon or open a menu.</string>
+    <string name="show_indicator">Page dots</string>
+    <string name="show_indicator_summary">Show which home page you are on.</string>
+    <string name="wallpaper_scroll">Wallpaper follows pages</string>
+    <string name="wallpaper_scroll_summary">The wallpaper drifts slightly as you swipe between pages.</string>
+    <string name="drawer_labels">App names in drawer</string>
 </resources>

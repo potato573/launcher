@@ -77,4 +77,20 @@
     <string name="glass_transparency_summary">Seberapa banyak wallpaper terlihat menembus panel, dock, dan kolom pencarian.</string>
     <string name="hide_nav_bar">Sembunyikan bilah navigasi</string>
     <string name="hide_nav_bar_summary">Geser dari tepi bawah untuk menampilkannya sebentar. Berlaku untuk navigasi tombol.</string>
+    <string name="section_motion">Gerakan</string>
+    <string name="page_effect">Transisi halaman</string>
+    <string name="effect_slide">Geser</string>
+    <string name="effect_zoom">Zoom</string>
+    <string name="effect_tilt">Miring</string>
+    <string name="anim_speed">Kecepatan animasi</string>
+    <string name="speed_calm">Tenang</string>
+    <string name="speed_normal">Normal</string>
+    <string name="speed_snappy">Gesit</string>
+    <string name="haptics">Getaran</string>
+    <string name="haptics_summary">Getaran singkat saat mengangkat ikon atau membuka menu.</string>
+    <string name="show_indicator">Titik halaman</string>
+    <string name="show_indicator_summary">Tampilkan posisi halaman layar utama.</string>
+    <string name="wallpaper_scroll">Wallpaper ikut bergeser</string>
+    <string name="wallpaper_scroll_summary">Wallpaper ikut bergeser pelan saat kamu menggeser halaman.</string>
+    <string name="drawer_labels">Nama aplikasi di laci</string>
 </resources>

@@ -19,6 +19,7 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import io.github.potato573.aura.AuraApp
 import io.github.potato573.aura.R
+import io.github.potato573.aura.anim.Motion
 import io.github.potato573.aura.anim.Spring
 import io.github.potato573.aura.anim.SpringAnimator
 import io.github.potato573.aura.data.AppEntry
@@ -392,6 +393,11 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         icons.setSize(baseIconSize())
         home.dock.iconSize = baseIconSize()
         home.setSections(settings.showClock, settings.showSearch, settings.showDock)
+        Motion.speed = settings.animSpeed.factor
+        home.workspace.effect = settings.pageEffect
+        home.workspace.wallpaperScroll = settings.wallpaperScroll
+        home.indicator.dotsEnabled = settings.showIndicator
+        drawer.setLabels(settings.drawerLabels)
         applyHomeColors()
         val cols = settings.homeColumns
         val rows = settings.homeRows
@@ -559,6 +565,10 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         }
     }
 
+    private fun haptic(v: View) {
+        if (settings.haptics) v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+    }
+
     private fun anchorRect(v: View): Rect {
         val r = Rect()
         if (v is IconView) v.iconBounds(r) else r.set(0, 0, v.width, v.height)
@@ -579,7 +589,7 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         folder: FolderItem? = null,
     ) {
         if (popup != null || drag.isActive) return
-        v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        haptic(v)
         val shortcuts = actions.shortcuts(entry).map { info ->
             PopupMenuView.Entry(actions.shortcutIcon(info), info.shortLabel ?: "", tintIcon = false) {
                 launchedFromDrawer = fromDrawer
@@ -623,7 +633,7 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
 
     private fun showFolderMenu(folder: FolderItem, v: IconView) {
         if (popup != null || drag.isActive) return
-        v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        haptic(v)
         showPopup(anchorRect(v), emptyList(), listOf(
             PopupMenuView.Entry(getDrawable(R.drawable.ic_remove), getString(R.string.remove_from_home)) {
                 store.update { it.remove(folder.id) }
@@ -659,6 +669,7 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         override val columns: Int get() = settings.homeColumns
         override val rows: Int get() = settings.homeRows
         override val highlightColor: Int get() = palette.accent
+        override val haptics: Boolean get() = settings.haptics
 
         override fun onDragStart(source: DropLogic.Source) {
             popup?.dismissNow()
@@ -718,7 +729,7 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
 
     private fun showHomeMenu(v: View) {
         if (popup != null || drawerProgress > 0f || drag.isActive) return
-        v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        haptic(v)
         val r = Rect(v.width / 2, v.height / 2, v.width / 2, v.height / 2)
         val anchor = anchorRect(v).let { full -> Rect(full.left + r.left, full.top + r.top, full.left + r.right, full.top + r.bottom) }
         showPopup(anchor, emptyList(), listOf(

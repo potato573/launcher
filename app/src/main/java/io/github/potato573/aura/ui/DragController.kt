@@ -35,6 +35,7 @@ class DragController(private val root: LauncherRoot, private val host: Host) {
         val columns: Int
         val rows: Int
         val highlightColor: Int
+        val haptics: Boolean
         /** The finger moved: close menus/folders/drawer and hide the source. */
         fun onDragStart(source: DropLogic.Source)
         /** What the cell under the finger would hold (null if empty) for this source. */
@@ -125,7 +126,7 @@ class DragController(private val root: LauncherRoot, private val host: Host) {
         dv.lift()
         state = State.DRAGGING
         host.onDragStart(src)
-        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        if (host.haptics) view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         move(ev.x, ev.y)
     }
 
