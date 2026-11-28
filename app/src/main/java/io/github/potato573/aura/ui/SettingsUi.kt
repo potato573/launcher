@@ -2,6 +2,7 @@ package io.github.potato573.aura.ui
 
 import android.app.Activity
 import android.content.res.ColorStateList
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.RippleDrawable
 import android.os.Build
@@ -25,7 +26,11 @@ import io.github.potato573.aura.util.systemBarsCompat
 /** Small builder for AURA's settings screens: flat rows, clear hierarchy, one accent. */
 class SettingsUi(private val activity: Activity, val palette: Palette) {
 
-    fun applyWindow(root: View) {
+    /**
+     * Edge-to-edge window over the wallpaper. With [blurRadius] > 0 (and system support) the
+     * wallpaper behind is blurred and the screen reads as one large sheet of frosted glass.
+     */
+    fun applyWindow(root: View, blurRadius: Int) {
         val w = activity.window
         if (Build.VERSION.SDK_INT >= 30) {
             w.setDecorFitsSystemWindows(false)
@@ -40,7 +45,8 @@ class SettingsUi(private val activity: Activity, val palette: Palette) {
             @Suppress("DEPRECATION")
             w.decorView.systemUiVisibility = flags
         }
-        w.decorView.setBackgroundColor(palette.surface)
+        w.setBackgroundDrawable(ColorDrawable(palette.sheet))
+        Glass.setWindowBlur(activity, if (palette.blur) blurRadius else 0)
         root.setOnApplyWindowInsetsListener { v, insets ->
             val b = insets.systemBarsCompat()
             v.setPadding(b.left, b.top, b.right, b.bottom)
@@ -50,7 +56,7 @@ class SettingsUi(private val activity: Activity, val palette: Palette) {
 
     fun title(text: CharSequence, subtitle: CharSequence? = null) = LinearLayout(activity).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(dp(24), dp(40), dp(24), dp(20))
+        setPadding(dp(32), dp(40), dp(32), dp(12))
         addView(TextView(activity).apply {
             this.text = text
             setTextColor(palette.textPrimary)
@@ -71,10 +77,25 @@ class SettingsUi(private val activity: Activity, val palette: Palette) {
         setTextColor(palette.accentOnSurface)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 13.5f)
         typeface = Fonts.sans(600)
-        setPadding(dp(24), dp(28), dp(24), dp(8))
+        setPadding(dp(32), dp(28), dp(32), dp(10))
     }
 
-    private fun pressable(): Drawable = RippleDrawable(ColorStateList.valueOf(palette.pressed), null, null)
+    /** A glass card that holds a run of related rows (add it to [parent], then fill it). */
+    fun group(parent: LinearLayout): LinearLayout {
+        val card = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            background = roundRect(palette.glassPanel, dp(26f), palette.glassStroke, dp(1))
+            clipToOutline = true
+            setPadding(0, dp(4), 0, dp(4))
+        }
+        parent.addView(card, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+            setMargins(dp(16), 0, dp(16), 0)
+        })
+        return card
+    }
+
+    // Bounded ripple: rows sit inside rounded cards and must not splash past them.
+    private fun pressable(): Drawable = RippleDrawable(ColorStateList.valueOf(palette.pressed), null, ColorDrawable(0xFFFFFFFF.toInt()))
 
     private fun texts(title: CharSequence, summary: CharSequence?): Pair<LinearLayout, TextView> {
         val summaryView = TextView(activity).apply {
@@ -102,7 +123,7 @@ class SettingsUi(private val activity: Activity, val palette: Palette) {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
         minimumHeight = dp(64)
-        setPadding(dp(24), dp(10), dp(20), dp(10))
+        setPadding(dp(20), dp(10), dp(16), dp(10))
     }
 
     /** Tappable row. Returns the summary view so callers can update it. */
@@ -203,13 +224,27 @@ class SettingsUi(private val activity: Activity, val palette: Palette) {
         return r
     }
 
-    fun slider(title: CharSequence, value: Int, min: Int, max: Int, step: Int, format: (Int) -> String, onChange: (Int) -> Unit): View {
+    /**
+     * A slider. [enabled] false shows it greyed out with [summary] explaining why (for
+     * features the device cannot do, rather than a control that silently does nothing).
+     */
+    fun slider(
+        title: CharSequence,
+        value: Int,
+        min: Int,
+        max: Int,
+        step: Int,
+        format: (Int) -> String,
+        summary: CharSequence? = null,
+        enabled: Boolean = true,
+        onChange: (Int) -> Unit,
+    ): View {
         val box = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(14), dp(24), dp(8))
+            setPadding(dp(20), dp(14), dp(20), dp(8))
         }
         val header = LinearLayout(activity).apply { orientation = LinearLayout.HORIZONTAL }
-        val (texts, _) = texts(title, null)
+        val (texts, _) = texts(title, summary)
         val valueView = TextView(activity).apply {
             setTextColor(palette.textSecondary)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
@@ -226,6 +261,7 @@ class SettingsUi(private val activity: Activity, val palette: Palette) {
             thumbTintList = ColorStateList.valueOf(palette.accent)
             progressBackgroundTintList = ColorStateList.valueOf(palette.textSecondary)
             contentDescription = title
+            isEnabled = enabled
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                     valueView.text = format(min + progress * step)
@@ -240,6 +276,10 @@ class SettingsUi(private val activity: Activity, val palette: Palette) {
         box.addView(bar, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(40)).apply {
             setMargins(-dp(12), dp(4), -dp(12), 0)
         })
+        if (!enabled) {
+            bar.alpha = 0.35f
+            valueView.alpha = 0.35f
+        }
         return box
     }
 
@@ -247,7 +287,7 @@ class SettingsUi(private val activity: Activity, val palette: Palette) {
     fun segmented(title: CharSequence, options: List<CharSequence>, selected: Int, onSelect: (Int) -> Unit): View {
         val box = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(14), dp(24), dp(12))
+            setPadding(dp(20), dp(14), dp(20), dp(12))
         }
         box.addView(texts(title, null).first)
         val group = LinearLayout(activity).apply {
@@ -289,7 +329,7 @@ class SettingsUi(private val activity: Activity, val palette: Palette) {
     fun swatches(title: CharSequence, colors: List<Int>, selected: Int, onSelect: (Int) -> Unit): View {
         val box = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(14), dp(24), dp(12))
+            setPadding(dp(20), dp(14), dp(20), dp(12))
         }
         box.addView(texts(title, null).first)
         val row = LinearLayout(activity).apply { orientation = LinearLayout.HORIZONTAL }
@@ -328,7 +368,7 @@ class SettingsUi(private val activity: Activity, val palette: Palette) {
         setTextColor(palette.textSecondary)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
         typeface = Fonts.sans(400)
-        setPadding(dp(24), dp(24), dp(24), dp(32))
+        setPadding(dp(32), dp(24), dp(32), dp(32))
         ellipsize = TextUtils.TruncateAt.END
     }
 

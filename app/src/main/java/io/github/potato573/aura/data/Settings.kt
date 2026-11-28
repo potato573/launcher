@@ -56,6 +56,16 @@ class Settings(context: Context) {
         get() = sp.getInt(K_ICON_SCALE, 100).coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)
         set(value) = sp.edit().putInt(K_ICON_SCALE, value.coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)).apply()
 
+    /** Strength of the background blur behind open panels, 0 (off) to 100. Android 12+ only. */
+    var blurStrength: Int
+        get() = sp.getInt(K_BLUR, 70).coerceIn(0, 100)
+        set(value) = sp.edit().putInt(K_BLUR, value.coerceIn(0, 100)).apply()
+
+    /** How see-through the glass panels are, in percent. */
+    var glassTransparency: Int
+        get() = sp.getInt(K_GLASS, 40).coerceIn(MIN_TRANSPARENCY, MAX_TRANSPARENCY)
+        set(value) = sp.edit().putInt(K_GLASS, value.coerceIn(MIN_TRANSPARENCY, MAX_TRANSPARENCY)).apply()
+
     var homeLabels: Boolean
         get() = sp.getBoolean(K_HOME_LABELS, true)
         set(value) = sp.edit().putBoolean(K_HOME_LABELS, value).apply()
@@ -102,6 +112,8 @@ class Settings(context: Context) {
         K_HOME_ROWS to homeRows,
         K_DRAWER_COLUMNS to drawerColumns,
         K_ICON_SCALE to iconScale,
+        K_BLUR to blurStrength,
+        K_GLASS to glassTransparency,
         K_HOME_LABELS to homeLabels,
         K_SHOW_DOCK to showDock,
         K_SHOW_CLOCK to showClock,
@@ -119,6 +131,8 @@ class Settings(context: Context) {
                 K_HOME_COLUMNS, K_DRAWER_COLUMNS -> if (v is Int) e.putInt(k, v.coerceIn(MIN_COLUMNS, MAX_COLUMNS))
                 K_HOME_ROWS -> if (v is Int) e.putInt(k, v.coerceIn(MIN_ROWS, MAX_ROWS))
                 K_ICON_SCALE -> if (v is Int) e.putInt(k, v.coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE))
+                K_BLUR -> if (v is Int) e.putInt(k, v.coerceIn(0, 100))
+                K_GLASS -> if (v is Int) e.putInt(k, v.coerceIn(MIN_TRANSPARENCY, MAX_TRANSPARENCY))
                 K_HOME_LABELS, K_SHOW_DOCK, K_SHOW_CLOCK, K_SHOW_SEARCH, K_DRAWER_KEYBOARD ->
                     if (v is Boolean) e.putBoolean(k, v)
             }
@@ -136,6 +150,8 @@ class Settings(context: Context) {
         const val K_HOME_ROWS = "home_rows"
         const val K_DRAWER_COLUMNS = "drawer_columns"
         const val K_ICON_SCALE = "icon_scale"
+        const val K_BLUR = "blur_strength"
+        const val K_GLASS = "glass_transparency"
         const val K_HOME_LABELS = "home_labels"
         const val K_SHOW_DOCK = "show_dock"
         const val K_SHOW_CLOCK = "show_clock"
@@ -151,5 +167,7 @@ class Settings(context: Context) {
         const val MAX_ROWS = 6
         const val MIN_ICON_SCALE = 80
         const val MAX_ICON_SCALE = 120
+        const val MIN_TRANSPARENCY = 10
+        const val MAX_TRANSPARENCY = 70
     }
 }

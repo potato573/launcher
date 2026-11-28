@@ -43,6 +43,9 @@ class FolderView(
     var onRename: ((String) -> Unit)? = null
     var onClosed: (() -> Unit)? = null
 
+    /** Open amount, 0..1, every frame (drives the background blur). */
+    var onProgress: ((Float) -> Unit)? = null
+
     private val title = EditText(context).apply {
         setText(folder.title)
         setSingleLine(true)
@@ -84,8 +87,7 @@ class FolderView(
 
     val card = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
-        background = roundRect(palette.surfaceRaised, dp(28f))
-        elevation = dp(16f)
+        background = roundRect(palette.glassPanel, dp(32f), palette.glassStroke, dp(1))
         setPadding(dp(12), dp(16), dp(12), dp(16))
     }
 
@@ -95,7 +97,10 @@ class FolderView(
         val s = 0.6f + 0.4f * p
         card.scaleX = s
         card.scaleY = s
-        setBackgroundColor(Palette.withAlpha(0xFF000000.toInt(), 0.28f * p.coerceIn(0f, 1f)))
+        // With real blur behind, a light dim is enough; without it the dim does more work.
+        val dim = if (palette.blur) 0.12f else 0.3f
+        setBackgroundColor(Palette.withAlpha(0xFF000000.toInt(), dim * p.coerceIn(0f, 1f)))
+        onProgress?.invoke(p.coerceIn(0f, 1f))
     }
 
     init {

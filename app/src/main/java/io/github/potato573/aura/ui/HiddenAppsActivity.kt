@@ -57,7 +57,7 @@ class HiddenAppsActivity : Activity() {
                 setTextColor(palette.textSecondary)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
                 typeface = Fonts.sans(400)
-                setPadding(dp(24), 0, dp(24), dp(16))
+                setPadding(dp(32), 0, dp(32), dp(16))
             })
         }
         list.addHeaderView(header, null, false)
@@ -73,7 +73,7 @@ class HiddenAppsActivity : Activity() {
         }
         list.adapter = adapter
         setContentView(list)
-        ui.applyWindow(list)
+        ui.applyWindow(list, Glass.maxRadius(this, app.settings))
         app.apps.addListener(appsListener)
     }
 

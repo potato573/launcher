@@ -136,15 +136,15 @@ class HomeView(context: Context) : LinearLayout(context) {
             if (darkText) tv.setShadowLayer(0f, 0f, 0f, 0) else tv.setShadowLayer(dp(6f), 0f, dp(1f), 0x40000000)
         }
         indicator.color = fg
-        dock.setSurface(darkText)
-        val pillBg = if (darkText) 0x66FFFFFF else 0x2EFFFFFF
-        searchPill.background = roundRect(pillBg, dp(25f), if (darkText) 0x33FFFFFF else 0x24FFFFFF, dp(1))
+        dock.setSurface(darkText, palette.opacity)
+        val (pillBg, pillStroke) = DockView.glassColors(darkText, palette.opacity)
+        searchPill.background = roundRect(pillBg, dp(25f), pillStroke, dp(1))
         searchText.setTextColor(sub)
         val icon = context.getDrawable(R.drawable.ic_search)?.mutate()
         icon?.setTint(sub)
         searchText.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null)
 
-        prompt.background = roundRect(palette.surfaceRaised, dp(18f))
+        prompt.background = roundRect(palette.surfaceRaised, dp(22f), palette.glassStroke, dp(1))
         prompt.elevation = dp(4f)
         promptText.setTextColor(palette.textPrimary)
         promptAction.setTextColor(palette.accentOnSurface)

@@ -25,19 +25,30 @@ class DockView(context: Context) : ViewGroup(context) {
     init {
         setWillNotDraw(false)
         clipChildren = false
-        setSurface(darkWallpaperText = false)
+        setSurface(darkWallpaperText = false, opacity = 0.6f)
     }
 
-    /** Light wallpapers (dark text) get a lighter, more opaque pill so icons stay crisp. */
-    fun setSurface(darkWallpaperText: Boolean) {
-        if (darkWallpaperText) {
-            bgPaint.color = 0x59FFFFFF
-            strokePaint.color = 0x33FFFFFF
-        } else {
-            bgPaint.color = 0x2EFFFFFF
-            strokePaint.color = 0x24FFFFFF
-        }
+    /**
+     * Light wallpapers (dark text) get a lighter, more opaque pill so icons stay crisp.
+     * [opacity] is the user's glass setting (0.3..0.9).
+     */
+    fun setSurface(darkWallpaperText: Boolean, opacity: Float) {
+        val c = glassColors(darkWallpaperText, opacity)
+        bgPaint.color = c.first
+        strokePaint.color = c.second
         invalidate()
+    }
+
+    companion object {
+        /** Fill and edge for glass that sits directly on the sharp home wallpaper. */
+        fun glassColors(darkWallpaperText: Boolean, opacity: Float): Pair<Int, Int> {
+            val k = (opacity / 0.6f).coerceIn(0.5f, 1.5f)
+            return if (darkWallpaperText) {
+                Palette.withAlpha(0xFFFFFFFF.toInt(), 0.36f * k) to Palette.withAlpha(0xFFFFFFFF.toInt(), 0.5f)
+            } else {
+                Palette.withAlpha(0xFFFFFFFF.toInt(), 0.17f * k) to Palette.withAlpha(0xFFFFFFFF.toInt(), 0.16f + 0.06f * k)
+            }
+        }
     }
 
     /** Index where a drop at local x would land, among the current children. */

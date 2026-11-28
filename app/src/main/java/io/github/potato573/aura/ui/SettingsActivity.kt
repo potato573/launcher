@@ -23,14 +23,23 @@ class SettingsActivity : Activity() {
     private lateinit var hiddenSummary: TextView
     private var themeKey = ""
 
+    private var stopWatchingBlur: () -> Unit = {}
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         build()
+        // Battery saver can switch blur off while this screen is open: redraw to match.
+        stopWatchingBlur = Glass.watchAvailability(this) { if (!isDestroyed) recreate() }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopWatchingBlur()
     }
 
     private fun build() {
         val palette = Palette.from(this, settings)
-        themeKey = "${palette.isDark}/${palette.accent}"
+        themeKey = palette.key
         val ui = SettingsUi(this, palette)
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val scroll = ScrollView(this).apply {
@@ -41,60 +50,88 @@ class SettingsActivity : Activity() {
         }
         // The window's insets controller only exists once there is content.
         setContentView(scroll)
-        ui.applyWindow(scroll)
+        ui.applyWindow(scroll, Glass.maxRadius(this, settings))
 
         list.addView(ui.title(getString(R.string.app_name), getString(R.string.settings_title)))
 
+        var group = ui.group(list)
         val (defaultRow, defSum) = ui.action(getString(R.string.default_launcher), "") {
             AppActions.requestDefaultLauncher(this)
         }
         defaultSummary = defSum
-        list.addView(defaultRow)
+        group.addView(defaultRow)
 
         list.addView(ui.section(getString(R.string.section_appearance)))
+        group = ui.group(list)
         val themes = Settings.Theme.entries
-        list.addView(ui.segmented(
+        group.addView(ui.segmented(
             getString(R.string.theme),
             listOf(getString(R.string.theme_system), getString(R.string.theme_light), getString(R.string.theme_dark)),
             themes.indexOf(settings.theme),
         ) { settings.theme = themes[it]; restyleIfNeeded() })
-        list.addView(ui.swatches(getString(R.string.accent), Palette.ACCENTS, settings.accent) {
+        group.addView(ui.swatches(getString(R.string.accent), Palette.ACCENTS, settings.accent) {
             settings.accent = it
             restyleIfNeeded()
         })
-        list.addView(ui.slider(
+        group.addView(ui.slider(
             getString(R.string.icon_size), settings.iconScale, Settings.MIN_ICON_SCALE, Settings.MAX_ICON_SCALE, 5,
             { getString(R.string.icon_size_value, it) },
         ) { settings.iconScale = it })
 
+        list.addView(ui.section(getString(R.string.section_glass)))
+        group = ui.group(list)
+        val canBlur = Glass.isBlurAvailable(this)
+        group.addView(ui.slider(
+            getString(R.string.blur_strength), settings.blurStrength, 0, 100, 10,
+            { if (it == 0) getString(R.string.blur_off) else getString(R.string.icon_size_value, it) },
+            summary = if (canBlur) getString(R.string.blur_summary) else getString(R.string.blur_unavailable),
+            enabled = canBlur,
+        ) {
+            settings.blurStrength = it
+            Glass.setWindowBlur(this, if (it > 0) Glass.maxRadius(this, settings) else 0)
+            restyleIfNeeded()
+        })
+        group.addView(ui.slider(
+            getString(R.string.glass_transparency), settings.glassTransparency,
+            Settings.MIN_TRANSPARENCY, Settings.MAX_TRANSPARENCY, 5,
+            { getString(R.string.icon_size_value, it) },
+            summary = getString(R.string.glass_transparency_summary),
+        ) {
+            settings.glassTransparency = it
+            restyleIfNeeded()
+        })
+
         list.addView(ui.section(getString(R.string.section_home)))
-        list.addView(ui.stepper(getString(R.string.home_columns), settings.homeColumns, Settings.MIN_COLUMNS, Settings.MAX_COLUMNS) {
+        group = ui.group(list)
+        group.addView(ui.stepper(getString(R.string.home_columns), settings.homeColumns, Settings.MIN_COLUMNS, Settings.MAX_COLUMNS) {
             settings.homeColumns = it
         })
-        list.addView(ui.stepper(getString(R.string.home_rows), settings.homeRows, Settings.MIN_ROWS, Settings.MAX_ROWS) {
+        group.addView(ui.stepper(getString(R.string.home_rows), settings.homeRows, Settings.MIN_ROWS, Settings.MAX_ROWS) {
             settings.homeRows = it
         })
-        list.addView(ui.toggle(getString(R.string.home_labels), checked = settings.homeLabels) { settings.homeLabels = it })
-        list.addView(ui.toggle(getString(R.string.show_clock), checked = settings.showClock) { settings.showClock = it })
-        list.addView(ui.toggle(getString(R.string.show_search), checked = settings.showSearch) { settings.showSearch = it })
-        list.addView(ui.toggle(getString(R.string.show_dock), checked = settings.showDock) { settings.showDock = it })
+        group.addView(ui.toggle(getString(R.string.home_labels), checked = settings.homeLabels) { settings.homeLabels = it })
+        group.addView(ui.toggle(getString(R.string.show_clock), checked = settings.showClock) { settings.showClock = it })
+        group.addView(ui.toggle(getString(R.string.show_search), checked = settings.showSearch) { settings.showSearch = it })
+        group.addView(ui.toggle(getString(R.string.show_dock), checked = settings.showDock) { settings.showDock = it })
 
         list.addView(ui.section(getString(R.string.section_drawer)))
-        list.addView(ui.stepper(getString(R.string.drawer_columns), settings.drawerColumns, Settings.MIN_COLUMNS, Settings.MAX_COLUMNS) {
+        group = ui.group(list)
+        group.addView(ui.stepper(getString(R.string.drawer_columns), settings.drawerColumns, Settings.MIN_COLUMNS, Settings.MAX_COLUMNS) {
             settings.drawerColumns = it
         })
-        list.addView(ui.toggle(getString(R.string.drawer_keyboard), getString(R.string.drawer_keyboard_summary), settings.drawerKeyboard) {
+        group.addView(ui.toggle(getString(R.string.drawer_keyboard), getString(R.string.drawer_keyboard_summary), settings.drawerKeyboard) {
             settings.drawerKeyboard = it
         })
         val (hiddenRow, hidSum) = ui.action(getString(R.string.hidden_apps), "") {
             startActivity(Intent(this, HiddenAppsActivity::class.java))
         }
         hiddenSummary = hidSum
-        list.addView(hiddenRow)
+        group.addView(hiddenRow)
 
         list.addView(ui.section(getString(R.string.section_system)))
-        list.addView(ui.action(getString(R.string.backup), getString(R.string.backup_summary)) { startBackup() }.first)
-        list.addView(ui.action(getString(R.string.restore), getString(R.string.restore_summary)) { startRestore() }.first)
+        group = ui.group(list)
+        group.addView(ui.action(getString(R.string.backup), getString(R.string.backup_summary)) { startBackup() }.first)
+        group.addView(ui.action(getString(R.string.restore), getString(R.string.restore_summary)) { startRestore() }.first)
 
         val version = try {
             packageManager.getPackageInfo(packageName, 0).versionName
@@ -105,10 +142,9 @@ class SettingsActivity : Activity() {
         refreshSummaries()
     }
 
-    /** Theme and accent changes rebuild the screen in place with the new palette. */
+    /** Theme, accent and glass changes rebuild the screen in place with the new palette. */
     private fun restyleIfNeeded() {
-        val p = Palette.from(this, settings)
-        if ("${p.isDark}/${p.accent}" != themeKey) recreate()
+        if (Palette.from(this, settings).key != themeKey) recreate()
     }
 
     override fun onResume() {

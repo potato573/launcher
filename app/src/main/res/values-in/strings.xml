@@ -69,4 +69,11 @@
     <string name="decrease">Kurangi</string>
     <string name="increase">Tambah</string>
     <string name="accent_option">Aksen %1$d</string>
+    <string name="section_glass">Efek kaca</string>
+    <string name="blur_strength">Blur latar</string>
+    <string name="blur_off">Mati</string>
+    <string name="blur_summary">Seberapa buram wallpaper di belakang laci aplikasi, folder, menu, dan layar ini.</string>
+    <string name="blur_unavailable">HP ini belum bisa blur saat ini (perlu Android 12 ke atas dan mode hemat baterai mati). Panel memakai warna yang lebih pekat sebagai gantinya.</string>
+    <string name="glass_transparency">Transparansi panel</string>
+    <string name="glass_transparency_summary">Seberapa banyak wallpaper terlihat menembus panel, dock, dan kolom pencarian.</string>
 </resources>

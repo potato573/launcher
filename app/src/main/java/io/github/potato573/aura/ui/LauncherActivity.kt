@@ -65,6 +65,16 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
     private var navInsets = Edges.NONE
     private val main = Handler(Looper.getMainLooper())
 
+    // ---- Glass blur -------------------------------------------------------------------
+
+    private var blurOn = false
+    private var blurMax = 0
+    private var lastBlurRadius = -1
+    private var lastHomeBlur = -1f
+    private var popupLevel = 0f
+    private var folderLevel = 0f
+    private var stopWatchingBlur: () -> Unit = {}
+
     // ---- Drawer motion ----------------------------------------------------------------
 
     override var drawerProgress = 0f
@@ -110,6 +120,8 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         repo.addListener(appsListener)
         repo.start()
         observeWallpaper()
+        // Battery saver and some system settings switch window blur off and on at runtime.
+        stopWatchingBlur = Glass.watchAvailability(this) { applySettings() }
     }
 
     override fun onResume() {
@@ -141,6 +153,7 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         store.removeListener(layoutListener)
         repo.removeListener(appsListener)
         drawerSpring.cancel()
+        stopWatchingBlur()
         if (Build.VERSION.SDK_INT >= 27) {
             try {
                 WallpaperManager.getInstance(this).removeOnColorsChangedListener(wallpaperListener as WallpaperManager.OnColorsChangedListener)
@@ -291,6 +304,11 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
     private fun applySettings() {
         palette = Palette.from(this, settings)
         lastLightBars = null
+        blurOn = palette.blur
+        blurMax = Glass.maxRadius(this, settings)
+        lastBlurRadius = -1
+        lastHomeBlur = -1f
+        updateBlur()
         drawer.applyPalette(palette)
         drawer.setColumns(settings.drawerColumns)
         drawer.setIconSize(baseIconSize())
@@ -550,7 +568,12 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         fv.onLaunch = { entry, iv -> launch(entry, iv, fromDrawer = false) }
         fv.onLongPress = { entry, iv -> showAppMenu(entry, iv, homeItem = null, inDock = false, folder = folder) }
         fv.onRename = { title -> store.update { it.renameFolder(folder.id, title) } }
-        fv.onClosed = { if (openFolder === fv) openFolder = null }
+        fv.onProgress = { p -> folderLevel = p; updateBlur() }
+        fv.onClosed = {
+            if (openFolder === fv) openFolder = null
+            folderLevel = 0f
+            updateBlur()
+        }
         openFolder = fv
         fv.open(root, anchorRect(v))
     }
@@ -636,7 +659,12 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
 
     private fun showPopup(anchor: Rect, shortcuts: List<PopupMenuView.Entry>, items: List<PopupMenuView.Entry>) {
         val menu = PopupMenuView(this, palette)
-        menu.onDismissed = { if (popup === menu) popup = null }
+        menu.onProgress = { p -> popupLevel = p; updateBlur() }
+        menu.onDismissed = {
+            if (popup === menu) popup = null
+            popupLevel = 0f
+            updateBlur()
+        }
         popup = menu
         menu.show(root, anchor, shortcuts, items, minTop = navInsets.top)
     }
@@ -711,6 +739,28 @@ class LauncherActivity : Activity(), LauncherRoot.Host {
         home.scaleY = s
         home.visibility = if (p >= 1f) View.INVISIBLE else View.VISIBLE
         updateSystemBars()
+        updateBlur()
+    }
+
+    /**
+     * One blur level for the whole window: the most open of drawer, folder and menu (a menu
+     * blurs less, it is a quick glance). The window call only happens when the pixel radius
+     * changes, so a settled screen costs nothing.
+     */
+    private fun updateBlur() {
+        if (!::home.isInitialized) return
+        val level = maxOf(drawerProgress, folderLevel, popupLevel * 0.6f)
+        val radius = if (blurOn) (level * blurMax).toInt() else 0
+        if (radius != lastBlurRadius) {
+            lastBlurRadius = radius
+            Glass.setWindowBlur(this, radius)
+        }
+        // Behind an open folder the home icons frost over too, so the folder stands alone.
+        val homeBlur = if (blurOn) folderLevel * blurMax * 0.35f else 0f
+        if (abs(homeBlur - lastHomeBlur) >= 0.5f || (homeBlur == 0f && lastHomeBlur != 0f)) {
+            lastHomeBlur = homeBlur
+            Glass.setViewBlur(home, homeBlur)
+        }
     }
 
     // ---- LauncherRoot.Host -------------------------------------------------------------

@@ -85,6 +85,8 @@ class LauncherSmokeTest {
         app.settings.iconScale = 120
         app.settings.theme = io.github.potato573.aura.data.Settings.Theme.DARK
         app.settings.showDock = false
+        app.settings.glassTransparency = 70
+        app.settings.blurStrength = 0
         app.settings.setHidden(ComponentKey("a", "a.B"), true)
         settle()
         assertTrue(launcher.window.decorView.visibility == View.VISIBLE)

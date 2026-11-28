@@ -31,10 +31,13 @@ class PopupMenuView(context: Context, private val palette: Palette) : FrameLayou
 
     var onDismissed: (() -> Unit)? = null
 
+    /** Open amount, 0..1, every frame (drives the background blur). */
+    var onProgress: ((Float) -> Unit)? = null
+
     private val card = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
-        background = roundRect(palette.surfaceRaised, dp(22f), palette.divider, dp(1))
-        elevation = dp(12f)
+        background = roundRect(palette.glassPanel, dp(24f), palette.glassStroke, dp(1))
+        // No shadow: under a translucent card it would show through as a grey smudge.
         clipToOutline = true
         setPadding(0, dp(6), 0, dp(6))
     }
@@ -45,6 +48,7 @@ class PopupMenuView(context: Context, private val palette: Palette) : FrameLayou
         val s = 0.86f + 0.14f * p
         card.scaleX = s
         card.scaleY = s
+        onProgress?.invoke(p.coerceIn(0f, 1f))
     }
 
     init {
@@ -140,7 +144,7 @@ class PopupMenuView(context: Context, private val palette: Palette) : FrameLayou
 
     private fun pressable() = android.graphics.drawable.RippleDrawable(
         android.content.res.ColorStateList.valueOf(palette.pressed), null,
-        roundRect(0xFF000000.toInt(), dp(14f)),
+        roundRect(0xFF000000.toInt(), dp(16f)),
     )
 
     private fun choose(e: Entry) {

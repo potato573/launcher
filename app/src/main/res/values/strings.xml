@@ -74,4 +74,11 @@
     <string name="decrease">Decrease</string>
     <string name="increase">Increase</string>
     <string name="accent_option">Accent %1$d</string>
+    <string name="section_glass">Glass</string>
+    <string name="blur_strength">Background blur</string>
+    <string name="blur_off">Off</string>
+    <string name="blur_summary">How strongly the wallpaper blurs behind the drawer, folders, menus and this screen.</string>
+    <string name="blur_unavailable">This phone cannot blur right now (needs Android 12 or later, and battery saver off). Panels use a denser tint instead.</string>
+    <string name="glass_transparency">Panel transparency</string>
+    <string name="glass_transparency_summary">How much of the wallpaper shows through panels, the dock and the search bar.</string>
 </resources>
