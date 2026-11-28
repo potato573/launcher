@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "PocketLauncher"
+rootProject.name = "AURA"
 include(":app")
